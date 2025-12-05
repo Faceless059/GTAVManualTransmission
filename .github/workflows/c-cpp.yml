@@ -1,0 +1,34 @@
+name: Build Manual Transmission
+
+on:
+  workflow_dispatch: # Allows you to click a button to start the build
+
+jobs:
+  build:
+    runs-on: windows-2019 # Uses an older Windows image compatible with the VS2019 project settings
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        ref: master # Builds the source code from the master branch (v5.6.1)
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Install DirectX SDK (June 2010)
+      run: |
+        choco install directx-9.0c-sdk -y
+        # Manually set the environment variable so the project finds it
+        echo "DXSDK_DIR=C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\" >> $env:GITHUB_ENV
+
+    - name: Build Solution
+      run: msbuild "Gears.sln" /p:Configuration=Release /p:Platform=x64
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Gears-ASI
+        path: |
+          x64/Release/Gears.asi
+          x64/Release/WheelSetup.exe
